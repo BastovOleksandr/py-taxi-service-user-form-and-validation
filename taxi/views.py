@@ -1,14 +1,14 @@
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .forms import (
+from taxi.forms import (
     DriverCreationForm,
     DriverLicenseUpdateForm,
-    CarCreationForm, CarUpdateForm,
+    CarCreationForm,
+    CarUpdateForm,
 )
 from .models import Driver, Car, Manufacturer
 
@@ -66,8 +66,23 @@ class CarListView(LoginRequiredMixin, generic.ListView):
 
 class CarDetailView(LoginRequiredMixin, generic.DetailView):
     model = Car
-    queryset = Car.objects.select_related("manufacturer").prefetch_related(
-        "drivers")
+    queryset = Car.objects.select_related(
+        "manufacturer"
+    ).prefetch_related(
+        "drivers"
+    )
+
+    def post(self, request, *args, **kwargs):
+        car = self.get_object()
+        driver = request.user
+        action = request.POST.get("action")
+
+        if action == "add":
+            car.drivers.add(driver)
+        elif action == "remove":
+            car.drivers.remove(driver)
+
+        return redirect("taxi:car-detail", pk=car.pk)
 
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
@@ -80,11 +95,6 @@ class CarUpdateView(LoginRequiredMixin, generic.UpdateView):
     model = Car
     form_class = CarUpdateForm
     success_url = reverse_lazy("taxi:car-list")
-
-
-class CarUpdateDriverView(LoginRequiredMixin, generic.UpdateView):
-    model = Car
-    success_url = reverse_lazy("taxi:car-detail")
 
 
 class CarDeleteView(LoginRequiredMixin, generic.DeleteView):
@@ -131,4 +141,4 @@ class DriverDeleteView(LoginRequiredMixin, generic.DeleteView):
 class DriverLicenseUpdateView(LoginRequiredMixin, generic.UpdateView):
     model = Driver
     form_class = DriverLicenseUpdateForm
-    template_name = "taxi/driver_license_update.html"
+    template_name = "taxi/driver_form.html"

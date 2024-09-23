@@ -10,44 +10,29 @@ from taxi.validation_patterns import (
 )
 
 
-class DriverCreationForm(UserCreationForm):
-    license_number = forms.CharField(
-        required=True,
-        validators=[
-            RegexValidator(
-                LICENSE_NUMBER_PATTERN,
-                message=LICENSE_NUMBER_MESSAGE
-            ),
-        ],
-        help_text=LICENSE_NUMBER_HELP_TEXT
-    )
-    cars = forms.ModelMultipleChoiceField(
-        queryset=Car.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
-
+class CarBaseForm(forms.ModelForm):
     class Meta:
-        model = Driver
-        fields = UserCreationForm.Meta.fields + (
-            "first_name",
-            "last_name",
-            "email",
-            "license_number",
-            "cars"
-        )
+        model = Car
+        fields = "__all__"
 
 
-class DriverLicenseUpdateForm(forms.ModelForm):
+class CarCreationForm(CarBaseForm):
+    pass
+
+
+class CarUpdateForm(CarBaseForm):
+    pass
+
+
+class DriverBaseForm(forms.ModelForm):
     license_number = forms.CharField(
         required=True,
         validators=[
             RegexValidator(
-                LICENSE_NUMBER_PATTERN,
-                message=LICENSE_NUMBER_MESSAGE
+                LICENSE_NUMBER_PATTERN, message=LICENSE_NUMBER_MESSAGE
             ),
         ],
-        help_text=LICENSE_NUMBER_HELP_TEXT
+        help_text=LICENSE_NUMBER_HELP_TEXT,
     )
 
     class Meta:
@@ -55,25 +40,16 @@ class DriverLicenseUpdateForm(forms.ModelForm):
         fields = ("license_number",)
 
 
-class CarCreationForm(forms.ModelForm):
-    drivers = forms.ModelMultipleChoiceField(
-        queryset=Driver.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
-
+class DriverCreationForm(UserCreationForm, DriverBaseForm):
     class Meta:
-        model = Car
-        fields = ("model", "manufacturer", "drivers",)
+        model = Driver
+        fields = UserCreationForm.Meta.fields + (
+            "first_name",
+            "last_name",
+            "email",
+        )
 
 
-class CarUpdateForm(forms.ModelForm):
-    drivers = forms.ModelMultipleChoiceField(
-        queryset=Driver.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
-
-    class Meta:
-        model = Car
-        fields = ("model", "manufacturer", "drivers",)
+class DriverLicenseUpdateForm(DriverBaseForm):
+    class Meta(DriverBaseForm.Meta):
+        pass
